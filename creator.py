@@ -25,7 +25,7 @@ def generate():
     payload = {"creation_point": "https://www.spotify.com/tr/signup?forward_url=https%3A%2F%2Fwww.spotify.com%2Ftr%2Freferral%2F0039885084bd3e5cd4c759df32fa1585a54a9988b38ba2280d39b3%2Fcontinue%2Fdefault-referral-trial-2m%2F",
             "gender": "male" if random.randint(0, 1) else "female",
             "birth_year": random.randint(1990, 2000),
-            "displayname": nick,
+            "displayname": fakesmile,
             "iagree": "true",
             "birth_month": random.randint(1, 11),
             "password_repeat": passw,
