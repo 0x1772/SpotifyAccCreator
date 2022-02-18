@@ -4,7 +4,7 @@ _____________________
 
 🔺Fıxed bugs and errors.
 
-🔺Api updated.
+🔺API updated.
 
 🔺Added 2 month Premium reflink for create premium accounts.
 _____________________
