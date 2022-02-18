@@ -1,189 +1,70 @@
-from sys import stdout
-from requests import post
-from os import system, _exit, path
-from random import choice, randint
-from colors import green, red, reset
-from time import time, sleep, strftime, gmtime
-from threading import Thread, Lock, active_count
-from string import ascii_letters, ascii_lowercase, digits
+import requests, string, random, argparse, sys
 
-system('cls && title [Spotify Account Creator] - Main Menu')
-headers = {'User-agent': 'S4A/2.0.15 (com.spotify.s4a; build:201500080; iOS 13.4.0) Alamofire/4.9.0', 'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8', 'Accept': 'application/json, text/plain;q=0.2, */*;q=0.1', 'App-Platform': 'IOS', 'Spotify-App': 'S4A', 'Accept-Language': 'en-TZ;q=1.0', 'Accept-Encoding': 'gzip;q=1.0, compress;q=0.5', 'Spotify-App-Version': '2.0.15'}
-domains = ['gmail.com', 'protonmail.com', 'yahoo.com', 'hotmail.com', 'hotmail.co.uk', 'hotmail.fr', 'outlook.com', 'icloud.com', 'mail.com', 'live.com', 'yahoo.it', 'yahoo.ca', 'yahoo.in', 'live.se', 'orange.fr', 'msn.com', 'mail.ru', 'mac.com']
-lock = Lock()
+def getRandomString(length): #Letters and numbers
+    pool=string.ascii_lowercase+string.digits
+    return "".join(random.choice(pool) for i in range(length))
 
-class Main:
-    def __init__(self):
-        self.variables = {
-            'proxies': [],
-            'proxy_num': 0,
-            'created': 0,
-            'retries': 0,
-            'cpm': 0,
-            'unlimited': False
-        }
+def getRandomText(length): #Chars only
+    return "".join(random.choice(string.ascii_lowercase) for i in range(length))
 
-        logo = '''
-  _____             _   _  __                         _____                _            
- / ____|           | | (_)/ _|         /\            / ____|              | |    
-| (___  _ __   ___ | |_ _| |_ _   _   /  \   ___ ___| |     _ __ ___  __ _| |_ ___  _ __ 
- \___ \| '_ \ / _ \| __| |  _| | | | / /\ \ / __/ __| |    | '__/ _ \/ _` | __/ _ \| '__|
- ____) | |_) | (_) | |_| | | | |_| |/ ____ \ (_| (__| |____| | |  __/ (_| | || (_) | |   
-|_____/| .__/ \___/ \__|_|_|  \__, /_/    \_\___\___|\_____|_|  \___|\__,_|\__\___/|_|   
-       | |                     __/ |                                                     
-       |_|                    |___/                                                      
-                                                            Creator: FakeSmile
-                                                            Contact: t.me/FakeSmileUX
-'''
-        print('%s%s' % (green(), logo))
+def generate():
+    nick = getRandomText(8)
+    passw = getRandomString(12)
+    email = nick+"@"+getRandomText(5)+".com"
 
-        print('\n\n %s[%s1%s] HTTP\n [%s2%s] SOCKS4\n [%s3%s] SOCKS5\n\n%s> %sSelect a Proxy Type%s: ' % (green(), reset(), green(), reset(), green(), reset(), green(), reset(), green(), reset()), end = '')
-        self.proxy_type = str(input())
-        if self.proxy_type.upper() in ['1', 'HTTP']:
-            self.proxy_type = 'http'
-        elif self.proxy_type.upper() in ['2', 'SOCKS4']:
-            self.proxy_type = 'socks4'
-        elif self.proxy_type.upper() in ['3', 'SOCKS5']:
-            self.proxy_type = 'socks5'
+    headers={"Accept-Encoding": "gzip",
+             "Accept-Language": "en-US",
+             "App-Platform": "Android",
+             "Connection": "Keep-Alive",
+             "Content-Type": "application/x-www-form-urlencoded",
+             "Host": "spclient.wg.spotify.com",
+             "User-Agent": "Spotify/8.6.72 Android/29 (SM-N976N)",
+             "Spotify-App-Version": "8.6.72",
+             "X-Client-Id": getRandomString(32)}
+    
+    payload = {"creation_point": "https://www.spotify.com/tr/signup?forward_url=https%3A%2F%2Fwww.spotify.com%2Ftr%2Freferral%2F0039885084bd3e5cd4c759df32fa1585a54a9988b38ba2280d39b3%2Fcontinue%2Fdefault-referral-trial-2m%2F",
+            "gender": "male" if random.randint(0, 1) else "female",
+            "birth_year": random.randint(1990, 2000),
+            "displayname": nick,
+            "iagree": "true",
+            "birth_month": random.randint(1, 11),
+            "password_repeat": passw,
+            "password": passw,
+            "key": "142b583129b2df829de3656f9eb484e6",
+            "platform": "Android-ARM",
+            "email": email,
+            "birth_day": random.randint(1, 20)}
+    
+    r = requests.post('https://spclient.wg.spotify.com/signup/public/v1/account/', headers=headers, data=payload)
+
+    if r.status_code==200:
+        if r.json()['status']==1:
+            return (True, nick+":"+r.json()["username"]+":"+email+":"+passw)
         else:
-            print('\n%s> %sInvalid input%s.' % (reset(), red(), reset()))
-            system('title [Spotify Account Creator] - Exiting . . .')
-            sleep(3)
-            _exit(0)
+            #Details available in r.json()["errors"]
+            #print(r.json()["errors"])
+            return (False, "Could not create the account, some errors occurred")
+    else:
+        return (False, "Could not load the page. Response code: "+ str(r.status_code))
 
-        print('%s> %sAmount to create (empty for unlimited)%s: ' % (reset(), green(), reset()), end = '')
-        self.amount = str(input())
-        print()
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-n", "--number", help="how many accounts to generate, default is 1", type=lambda x: (int(x) > 0) and int(x) or sys.exit("Invalid number: minimum amount is 1"))
+    parser.add_argument("-o", "--output", help="output file, default prints to the console")
+    args = parser.parse_args()
 
-        if self.amount == '':
-            self.variables['unlimited'] = True
-            self.amount = 0
-        elif self.amount != '' and not self.amount.isdigit():
-            print('%s> %sInvalid input%s.' % (reset(), red(), reset()))
-            system('title [Spotify Account Creator] - Exiting . . .')
-            sleep(3)
-            _exit(0)
+    N = args.number if args.number else 1
+    file = open(args.output, "a") if args.output else sys.stdout
 
-    def setup(self):
-        if path.exists('Proxies.txt'):
-            with open('Proxies.txt', 'r', encoding = 'UTF-8') as f:
-                for line in f.read().splitlines():
-                    if line != '':
-                        self.variables['proxies'].append(line)
-            if len(self.variables['proxies']) == 0:
-                self.error_import(False)
+    print("Generating accounts in the following format:", file=sys.stdout)
+    print("NICKNAME:USERNAME:EMAIL:PASSWORD\n", file=sys.stdout)
+    for i in range(N):
+        result = generate()
+        if result[0]:
+            print(result[1], file=file)
+            if file is not sys.stdout:
+                print(result[1], file=sys.stdout)
         else:
-            self.error_import(True)
+            print(str(i+1)+"/"+str(N)+": "+result[1], file=sys.stdout)
 
-    def error_import(self, create):
-        if create:
-            open('Proxies.txt', 'a').close()
-        print('%s> %sPaste your proxies inside Proxies.txt%s!' % (reset(), red(), reset()))
-        system('title [Spotify Account Creator] - Exiting . . .')
-        sleep(3)
-        _exit(0)
-
-    def write(self, arg):
-        lock.acquire()
-        stdout.flush()
-        stdout.write('%s\n' % (arg.encode('ascii', 'replace').decode())) # Get less printing bugs on Windows
-        lock.release()
-
-    def cpm_counter(self):
-        if self.variables['unlimited']:
-            while True:
-                old = self.variables['created']
-                sleep(4)
-                new = self.variables['created']
-                self.variables['cpm'] = ((new - old) * 15)
-        else:
-            while self.variables['created'] != int(self.amount):
-                old = self.variables['created']
-                sleep(4)
-                new = self.variables['created']
-                self.variables['cpm'] = ((new - old) * 15)
-
-    def update_title(self):
-        if self.variables['unlimited']:
-            while True:
-                elapsed = strftime('%H:%M:%S', gmtime(time() - self.start))
-                system('title [Spotify Account Creator] - Created: %s ^| Retries: %s ^| CPM: %s ^| Time Elapsed: %s ^| Threads: %s' % (self.variables['created'], self.variables['retries'], self.variables['cpm'], elapsed, (active_count() - 2)))
-                sleep(0.4)
-        else:
-            while self.variables['created'] != int(self.amount):
-                elapsed = strftime('%H:%M:%S', gmtime(time() - self.start))
-                system('title [Spotify Account Creator] - Created: %s/%s ^| Retries: %s ^| CPM: %s ^| Time Elapsed: %s ^| Threads: %s' % (self.variables['created'], self.amount, self.variables['retries'], self.variables['cpm'], elapsed, (active_count() - 2)))
-                sleep(0.4)
-
-            elapsed = strftime('%H:%M:%S', gmtime(time() - self.start))
-            system('title [Spotify Account Creator] - Created: %s/%s ^| Retries: %s ^| CPM: %s ^| Time Elapsed: %s ^| Threads: %s' % (self.variables['created'], self.amount, self.variables['retries'], self.variables['cpm'], elapsed, (active_count() - 2)))
-
-    def retry(self):
-        self.variables['retries'] += 1
-        self.creator(choice(self.variables['proxies']))
-
-    def creator(self, proxy):
-        email = '%s@%s' % (''.join(choice(ascii_lowercase + digits) for _ in range(randint(7, 10))), choice(domains))
-        password = ''.join(choice(ascii_letters + digits) for _ in range(randint(8, 14)))
-        birth_year = randint(1970, 2005)
-        birth_month = randint(1, 12)
-        birth_day = randint(1, 28)
-        gender = choice(['male', 'female'])
-
-        data = 'creation_point=lite_7e7cf598605d47caba394c628e2735a2&password_repeat=%s&platform=Android-ARM&iagree=true&password=%s&gender=%s&key=a2d4b979dc624757b4fb47de483f3505&birth_day=%s&birth_month=%s&email=%s&birth_year=%s' % (password, password, gender, birth_day, birth_month, email, birth_year)
-        
-        try:
-            create = post('https://spclient.wg.spotify.com/signup/public/v1/account', data = data, headers = headers, proxies = {'https': '%s://%s' % (self.proxy_type, proxy)}, timeout = 5)
-            if create.json()['status'] == 1:
-                username = create.json()['username']
-                if username != '':
-                    self.write('%s[%sCREATED%s] %s:%s | Username: %s | Gender: %s | Date of Birth: %s/%s-%s' % (green(), reset(), green(), email, password, username, gender.replace(gender[0], gender[0].upper()), birth_day, birth_month, birth_year))
-                    with open('Created [RAW].txt', 'a', encoding = 'UTF-8') as f: f.write('%s:%s\n' % (email, password))
-                    with open('Created [CAPTURE].txt', 'a', encoding = 'UTF-8') as f: f.write('%s:%s | Username: %s | Gender: %s | Date of Birth: %s/%s-%s\n' % (email, password, username, gender.replace(gender[0], gender[0].upper()), birth_day, birth_month, birth_year))
-
-                    self.variables['created'] += 1
-                else:
-                    self.retry()
-            else:
-                self.retry()
-        except:
-            self.retry()
-
-    def multi_threading(self):
-        self.start = time()
-        Thread(target = self.cpm_counter).start()
-        Thread(target = self.update_title).start()
-
-        if self.variables['unlimited']:
-            while True:
-                try:
-                    Thread(target = self.creator, args = (self.variables['proxies'][self.variables['proxy_num']],)).start()
-                except:
-                    continue
-                self.variables['proxy_num'] += 1
-                if self.variables['proxy_num'] >= len(self.variables['proxies']):
-                    self.variables['proxy_num'] = 0
-        else:
-            num = 0
-            while num < int(self.amount):
-                try:
-                    Thread(target = self.creator, args = (self.variables['proxies'][self.variables['proxy_num']],)).start()
-                except:
-                    continue
-                num += 1
-                self.variables['proxy_num'] += 1
-                if self.variables['proxy_num'] >= len(self.variables['proxies']):
-                    self.variables['proxy_num'] = 0
-            
-            while self.variables['created'] != int(self.amount):
-                continue
-            print('\n%s> %sFinished%s.' % (reset(), green(), reset()))
-            system('pause >NUL')
-            print('> Exiting . . .')
-            sleep(3)
-            _exit(0)
-
-if __name__ == '__main__':
-    main = Main()
-    main.setup()
-    main.multi_threading()
+    if file is not sys.stdout: file.close()
