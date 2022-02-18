@@ -38,8 +38,13 @@ $ Thanks for reporting...
 - [ ] Add Follower Bot Option
 _____________________
 
+### [OLDACCOUNT](http://github.com/FakeSmileUX)
 
+### THIS IS MY OLD GITHUB ACCOUNT BUT I CREATED [NEWONE](https://github.com/FakeSmileVX)
 
+### You can reach me from [Telegram](https://t.me/FakeSmileUX)
+
+_____________________
 Tools
 
 ![](https://img.shields.io/badge/Tool-VisualStudioCode-informational?style=flat&logo=<TOOL>&logoColor=white&color=ff2300)
